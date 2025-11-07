@@ -366,10 +366,10 @@
       scoreDisplay.textContent = `Survived: ${survived.toFixed(2)}s`;
       accSpawn += dt;
       // gradually increase difficulty
-      if(survived > 10) speedMultiplier = 1.2;
-      if(survived > 20) speedMultiplier = 1.4;
-      if(survived > 35) speedMultiplier = 1.7;
-      if(survived > 60) speedMultiplier = 2.2;
+      if(survived > 10) speedMultiplier = 1.5;
+      if(survived > 20) speedMultiplier = 1.7;
+      if(survived > 35) speedMultiplier = 2.5;
+      if(survived > 60) speedMultiplier = 6;
       // spawn obstacles
       const interval = Math.max(0.45, spawnInterval - Math.min(0.5,survived/80));
       if(accSpawn > interval){
@@ -380,6 +380,11 @@
       }
       // player horizontal auto-move: moves left->right then wraps gently
       player.x += player.vx * dt * (1 + survived/120);
+      // prevent player from flying off screen
+      if (player.x > canvas.width * 0.25) {
+      player.x = canvas.width * 0.25; // giữ rocket trong 1/4 trái màn hình
+    }
+
       if(player.x > 0.82) player.x = 0.12; // teleport back slightly (gives sense of continuous flight)
     }
 
@@ -498,6 +503,7 @@
 </script>
 </body>
 </html>
+
 
 
 
