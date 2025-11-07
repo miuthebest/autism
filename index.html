@@ -1,242 +1,217 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Emoji Chemistry — little sandbox</title>
-<style>
-  :root{
-    --bg:#fbfbfb; --panel:#fff; --muted:#8b8b8b; --accent:#ff84b8;
-    --canvas-h:520px;
-  }
-  *{box-sizing:border-box}
-  body{
-    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    margin:0;
-    background:linear-gradient(180deg,#fff 0%, #fff8fb 100%);
-    color:#222;
-    display:flex;
-    min-height:100vh;
-    align-items:flex-start;
-    justify-content:center;
-    padding:28px;
-  }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>emoji chemistry sandbox</title>
+  <style>
+    body {
+      font-family: "Poppins", sans-serif;
+      background: #fff6fa;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      height: 100vh;
+      color: #444;
+    }
 
-  .wrap{
-    width:980px;
-    max-width:95%;
-    background:var(--panel);
-    border-radius:14px;
-    box-shadow: 0 10px 30px rgba(18,18,18,0.06);
-    padding:18px;
-  }
+    .container {
+      display: flex;
+      margin-top: 40px;
+      gap: 25px;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 4px 15px rgba(255, 182, 193, 0.3);
+      padding: 20px 25px;
+    }
 
-  header{
-    display:flex;
-    gap:12px;
-    align-items:center;
-    margin-bottom:12px;
-  }
-  header h1{
-    font-size:20px;
-    margin:0;
-    color:#ff5f9a;
-  }
-  header .small{color:var(--muted); font-size:13px}
+    .palette {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #fff0f6;
+      border-radius: 15px;
+      padding: 20px;
+      min-width: 150px;
+    }
 
-  .top{
-    display:flex;
-    gap:16px;
-  }
+    .palette h2 {
+      color: #ff6ca5;
+      font-size: 1.2rem;
+      margin-bottom: 15px;
+    }
 
-  /* left: palette */
-  .palette{
-    width:220px;
-    min-width:180px;
-    padding:12px;
-    background:linear-gradient(180deg,#fff,#fffaf6);
-    border-radius:10px;
-    border:1px solid #ffe7f0;
-  }
-  .palette h3{margin:0 0 8px 0; font-size:14px; color:#ff5f9a}
-  .atoms{display:flex;flex-wrap:wrap;gap:8px}
-  .atom{
-    width:48px;height:48px;border-radius:8px;
-    display:flex;align-items:center;justify-content:center;font-size:26px;
-    cursor:grab;border:1px solid transparent;
-    background:rgba(255,255,255,0.6); user-select:none;
-  }
-  .atom:active{cursor:grabbing}
-  .atom .label{display:block;font-size:11px;color:var(--muted); margin-top:6px}
+    .atoms {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
 
-  .controls{margin-top:12px; display:flex;gap:8px; flex-direction:column}
-  .controls button{
-    padding:8px 10px;border-radius:8px;border:1px solid #ddd;background:#fff;
-    cursor:pointer;font-weight:600;
-  }
+    .atom {
+      font-size: 30px;
+      cursor: grab;
+      text-align: center;
+      user-select: none;
+    }
 
-  /* right: canvas */
-  .board{
-    flex:1;
-    display:flex;flex-direction:column;
-  }
-  .canvas-wrap{
-    position:relative;
-    height:var(--canvas-h);
-    border-radius:10px;
-    border:2px dashed rgba(0,0,0,0.06);
-    background:linear-gradient(180deg,#fafafa, #fff);
-    overflow:hidden;
-  }
-  .canvas-top{
-    display:flex;justify-content:space-between;align-items:center;padding:8px 12px;
-  }
-  .hint{color:var(--muted);font-size:13px}
+    .canvas {
+      position: relative;
+      background: #fffafb;
+      border: 2px dashed #ffd5e3;
+      width: 600px;
+      height: 400px;
+      border-radius: 15px;
+      overflow: hidden;
+    }
 
-  /* atom nodes on canvas */
-  .node{
-    position:absolute;
-    width:56px;height:56px;border-radius:10px;
-    display:flex;align-items:center;justify-content:center;
-    font-size:28px; cursor:pointer;
-    user-select:none; transition:transform .12s ease, box-shadow .12s ease;
-    background:linear-gradient(180deg, #ffffff, #fff8fb);
-    border:1px solid #f0d8e6;
-    box-shadow: 0 6px 18px rgba(255,97,154,0.06);
-  }
-  .node:hover{transform:translateY(-4px)}
-  .node .meta{
-    position:absolute; bottom:-18px; left:50%; transform:translateX(-50%);
-    font-size:12px; color:var(--muted);
-    background:rgba(255,255,255,0.85); padding:2px 6px; border-radius:10px;
-    border:1px solid #f2f2f2;
-  }
+    .node {
+      position: absolute;
+      font-size: 28px;
+      cursor: grab;
+      user-select: none;
+      transition: transform 0.2s ease;
+    }
 
-  /* selection */
-  .selected{box-shadow:0 10px 30px rgba(255,97,154,0.12); border-color:#ffb6d6; transform:scale(1.06)}
+    .node:active {
+      transform: scale(1.2);
+    }
 
-  /* bottom info */
-  .info{
-    margin-top:12px;
-    display:flex;justify-content:space-between;gap:8px;align-items:center;
-  }
-  .info .left{font-size:13px;color:var(--muted)}
-  .info .right{display:flex; gap:8px; align-items:center}
-  .export{
-    padding:8px 10px;border-radius:8px;border:1px solid #ffdfe8;background:#fff;color:#ff5f9a;
-    cursor:pointer;font-weight:700;
-  }
+    .toolbar {
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-around;
+      width: 100%;
+    }
 
-  /* lines (svg overlay) */
-  svg{position:absolute; inset:0; pointer-events:none}
+    button {
+      background: #ffeaf2;
+      border: 1px solid #ffc9dc;
+      border-radius: 8px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.9rem;
+      color: #ff6ca5;
+      transition: all 0.2s;
+    }
 
-  /* responsive */
-  @media (max-width:880px){
-    .top{flex-direction:column}
-    .palette{width:100%}
-    .board{width:100%}
-  }
+    button:hover {
+      background: #ffb6c1;
+      color: white;
+    }
 
-  /* little legend */
-  .legend{font-size:12px; color:var(--muted); margin-top:8px}
-  .legend span{display:inline-block;margin-right:8px}
-</style>
+    .title {
+      text-align: center;
+      font-weight: 600;
+      color: #ff6ca5;
+      margin-bottom: 10px;
+    }
+
+    /* dark mode */
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: #1e1e1e;
+        color: #ddd;
+      }
+      .container {
+        background: #2c2c2c;
+        box-shadow: 0 4px 12px rgba(255, 140, 176, 0.2);
+      }
+      .canvas {
+        background: #262626;
+        border: 2px dashed #555;
+      }
+      .palette {
+        background: #333;
+      }
+      button {
+        background: #3a3a3a;
+        border: 1px solid #555;
+        color: #ff9fc7;
+      }
+      button:hover {
+        background: #ff9fc7;
+        color: #2b2b2b;
+      }
+    }
+  </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <h1>emoji chemistry sandbox</h1>
-      <div class="small">drag emoji → canvas • click two nodes to connect • valence enforced</div>
-    </header>
+  <div class="container">
+    <div class="palette">
+      <h2>Atoms (emoji)</h2>
+      <div class="atoms">
+        <div class="atom" draggable="true" data-type="🟣">🟣</div>
+        <div class="atom" draggable="true" data-type="🔴">🔴</div>
+        <div class="atom" draggable="true" data-type="⚫">⚫</div>
+        <div class="atom" draggable="true" data-type="🟡">🟡</div>
+        <div class="atom" draggable="true" data-type="🟢">🟢</div>
+        <div class="atom" draggable="true" data-type="🔵">🔵</div>
+      </div>
+      <div class="toolbar">
+        <button id="reset">Reset</button>
+      </div>
+    </div>
 
-    <div class="top">
-      <aside class="palette">
-        <h3>Atoms (emoji)</h3>
-        <div class="atoms" id="palette">
-          <!-- emojis and their 'codes' -->
-          <div class="atom" draggable="true" data-type="H" title="Hydrogen (H) — valence 1">🔵</div>
-          <div class="atom" draggable="true" data-type="O" title="Oxygen (O) — valence 2">🔴</div>
-          <div class="atom" draggable="true" data-type="C" title="Carbon (C) — valence 4">⚫</div>
-          <div class="atom" draggable="true" data-type="N" title="Nitrogen (N) — valence 3">🟣</div>
-          <div class="atom" draggable="true" data-type="S" title="Sulfur (S) — valence 2">🟡</div>
-          <div class="atom" draggable="true" data-type="Cl" title="Chlorine (Cl) — valence 1">🟢</div>
-        </div>
-
-        <div class="legend">
-          <div><strong>Legend:</strong></div>
-          <span>🔵 H (1)</span>
-          <span>🔴 O (2)</span>
-          <span>⚫ C (4)</span>
-          <span>🟣 N (3)</span>
-          <span>🟡 S (2)</span>
-          <span>🟢 Cl (1)</span>
-        </div>
-
-        <div class="controls">
-          <button id="clearBtn">Reset canvas</button>
-          <button id="autoLayoutBtn">Auto layout</button>
-        </div>
-      </aside>
-
-      <section class="board">
-        <div class="canvas-top">
-          <div class="hint">Drop atoms here — connect by clicking two atoms</div>
-          <div class="hint" id="status">Atoms: 0 • Bonds: 0</div>
-        </div>
-
-        <div class="canvas-wrap" id="canvas">
-          <svg id="svgline" width="100%" height="100%"></svg>
-          <!-- nodes (atoms) will be inserted here -->
-        </div>
-
-        <div class="info">
-          <div class="left">Tip: you can drag nodes to reposition. Export to copy molecule data.</div>
-          <div class="right">
-            <button class="export" id="exportBtn">Export</button>
-            <button id="copyBtn">Copy export</button>
-          </div>
-        </div>
-      </section>
+    <div class="canvas" id="canvas">
+      <p style="text-align:center; color:#aaa; margin-top:180px;">Drag atoms here 💫</p>
     </div>
   </div>
 
-<script>
-/*
-  Emoji Chemistry Sandbox
-  - drag emoji from palette to canvas to create nodes
-  - click two nodes to create/remove bond (visual: SVG line)
-  - valence rules: H1 O2 C4 N3 S2 Cl1
-  - nodes are draggable inside canvas
-  - simple Export: JSON with atoms and bonds
-*/
+  <script>
+    const canvas = document.getElementById('canvas');
+    const resetBtn = document.getElementById('reset');
+    let nodes = [];
 
-const valence = { H:1, O:2, C:4, N:3, S:2, Cl:1 };
-const emojiFor = { H:'🔵', O:'🔴', C:'⚫', N:'🟣', S:'🟡', Cl:'🟢' };
+    // allow drop
+    canvas.addEventListener('dragover', (e)=> e.preventDefault());
 
-const palette = document.getElementById('palette');
-const canvas = document.getElementById('canvas');
-const svg = document.getElementById('svgline');
-const status = document.getElementById('status');
-const clearBtn = document.getElementById('clearBtn');
-const exportBtn = document.getElementById('exportBtn');
-const copyBtn = document.getElementById('copyBtn');
-const autoLayoutBtn = document.getElementById('autoLayoutBtn');
+    // drop atom onto canvas
+    canvas.addEventListener('drop', (e)=>{
+      e.preventDefault();
+      const type = e.dataTransfer.getData('text/plain');
+      if(!type) return;
+      const x = e.offsetX;
+      const y = e.offsetY;
+      const node = document.createElement('div');
+      node.classList.add('node');
+      node.textContent = type;
+      node.style.left = `${x - 15}px`;
+      node.style.top = `${y - 15}px`;
+      node.draggable = true;
+      canvas.appendChild(node);
+      nodes.push(node);
+    });
 
-let nodes = []; // {id,type,x,y, bonds:Set()}
-let nextId = 1;
-let selectedNode = null;
+    // move existing nodes
+    canvas.addEventListener('dragstart', (e)=>{
+      if(!e.target.classList.contains('node')) return;
+      e.dataTransfer.setData('text/plain', JSON.stringify({
+        move: true,
+        id: nodes.indexOf(e.target)
+      }));
+    });
 
-function updateStatus(){
-  const bondsCount = nodes.reduce((s,n)=>s + n.bonds.size,0)/2;
-  status.textContent = `Atoms: ${nodes.length} • Bonds: ${bondsCount}`;
-}
+    canvas.addEventListener('drop', (e)=>{
+      const data = e.dataTransfer.getData('text/plain');
+      try {
+        const parsed = JSON.parse(data);
+        if(parsed.move){
+          const node = nodes[parsed.id];
+          node.style.left = `${e.offsetX - 15}px`;
+          node.style.top = `${e.offsetY - 15}px`;
+          return;
+        }
+      } catch {}
+    });
 
-function createNode(type, x, y){
-  const id = nextId++;
-  const el = document.createElement('div');
-  el.className = 'node';
-  el.dataset.id = id;
-  el.innerHTML = `<span class="emoji">${emojiFor[type] || '🔸'}</span>
-                  <div class="meta">${type}</div>`;
-  el.style.left = (x - 28) + 'px';
-  e
+    // reset button
+    resetBtn.addEventListener('click', ()=>{
+      canvas.innerHTML = '<p style="text-align:center; color:#aaa; margin-top:180px;">Drag atoms here 💫</p>';
+      nodes = [];
+    });
+  </script>
+</body>
+</html>
