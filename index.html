@@ -1,217 +1,501 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>emoji chemistry sandbox</title>
-  <style>
-    body {
-      font-family: "Poppins", sans-serif;
-      background: #fff6fa;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      height: 100vh;
-      color: #444;
-    }
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Rocket Dodge — sunset space</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-1:#0d0316;
+    --bg-2:#2b0736;
+    --accent:#ff7fb6;
+    --ui:#e9d7e4;
+  }
+  html,body{height:100%;margin:0;font-family:'Poppins',sans-serif;background:linear-gradient(180deg,var(--bg-1),var(--bg-2)); color:#fff; -webkit-font-smoothing:antialiased;}
+  .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;}
+  .game-area{width:900px;max-width:96vw;height:520px;border-radius:14px;position:relative;overflow:hidden;box-shadow: 0 12px 40px rgba(0,0,0,0.6);background:radial-gradient(1000px 400px at 20% 30%, rgba(255,140,176,0.04), transparent 10%), radial-gradient(600px 300px at 80% 70%, rgba(120,70,160,0.06), transparent 10%), linear-gradient(180deg,#0b0620,#1b0730 50%, #2d0a3b);}
 
-    .container {
-      display: flex;
-      margin-top: 40px;
-      gap: 25px;
-      background: white;
-      border-radius: 20px;
-      box-shadow: 0 4px 15px rgba(255, 182, 193, 0.3);
-      padding: 20px 25px;
-    }
+/* starfield canvas stretches full */
+#bgCanvas{position:absolute;inset:0;z-index:0}
 
-    .palette {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      background: #fff0f6;
-      border-radius: 15px;
-      padding: 20px;
-      min-width: 150px;
-    }
+/* main canvas (game objects) */
+#gameCanvas{position:absolute;inset:0;z-index:2;}
 
-    .palette h2 {
-      color: #ff6ca5;
-      font-size: 1.2rem;
-      margin-bottom: 15px;
-    }
+/* UI overlay */
+.ui{
+  position:absolute; z-index:5; inset:0; pointer-events:none;
+  display:flex;flex-direction:column;justify-content:space-between;
+}
+.top-left{padding:14px}
+.title{
+  font-size:22px;font-weight:600;color:var(--ui); text-shadow:0 4px 18px rgba(0,0,0,0.6);
+  pointer-events:none;
+}
+/* center start/menu */
+.menu{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:10;
+  background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+  padding:26px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);backdrop-filter:blur(4px);
+  text-align:center; width:86%;
+}
+.menu h1{margin:0 0 10px 0;font-size:28px;color:#ffd6ea}
+.menu p{margin:0 0 16px 0;color:#ffdcee}
+.menu .choices{display:flex;gap:12px;justify-content:center;margin-bottom:12px}
+.btn{
+  padding:10px 16px;border-radius:10px;border:2px solid rgba(255,255,255,0.06);
+  background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  color:#fff;font-weight:600;cursor:pointer;pointer-events:auto;
+  transition:transform .12s ease, box-shadow .12s ease, background .12s;
+}
+.btn:hover{transform:translateY(-4px);box-shadow:0 10px 30px rgba(255,120,175,0.08)}
+.btn.primary{background:linear-gradient(180deg,#ff78b4,#ff4f9f);color:#fff;border:none}
+.small{font-size:13px;color:#ffd6ea}
 
-    .atoms {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
+/* bottom timer jelly */
+.timerWrap{position: absolute; left:50%; bottom:18px; transform:translateX(-50%); z-index:8; pointer-events:none;}
+.timer{
+  background: linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  padding:10px 18px;border-radius:999px;font-weight:600;color:#ffdce9;border:1px solid rgba(255,255,255,0.03);
+  display:flex;align-items:center;gap:10px; box-shadow: 0 10px 30px rgba(140,60,120,0.06);
+  animation: jelly 1.2s infinite;
+}
+@keyframes jelly{
+  0%{ transform: translateX(-50%) scale(1) }
+  25%{ transform: translateX(-50%) scale(1.05,0.95) }
+  50%{ transform: translateX(-50%) scale(0.98,1.02) }
+  75%{ transform: translateX(-50%) scale(1.02,0.98) }
+  100%{ transform: translateX(-50%) scale(1) }
+}
+.timer strong{color:#fff;font-size:1.1rem}
 
-    .atom {
-      font-size: 30px;
-      cursor: grab;
-      text-align: center;
-      user-select: none;
-    }
+/* gameover overlay */
+.overlay{
+  position:absolute; inset:0; z-index:12; background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.6));
+  display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:20px;text-align:center;
+}
+.overlay h2{color:#ffd6ea;margin:0;font-size:26px}
+.overlay p{color:#ffd6ea;margin:0}
+.overlay .actions{display:flex;gap:10px;margin-top:8px}
+.small-note{font-size:13px;color:#ffd6ea;opacity:0.9}
 
-    .canvas {
-      position: relative;
-      background: #fffafb;
-      border: 2px dashed #ffd5e3;
-      width: 600px;
-      height: 400px;
-      border-radius: 15px;
-      overflow: hidden;
-    }
+/* tiny HUD left */
+.hud-left{
+  position:absolute; left:14px; top:14px; z-index:7; font-size:13px; padding:6px 10px;border-radius:10px;background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.02)
+}
+.hud-left b{display:block;font-size:15px;color:#fff}
 
-    .node {
-      position: absolute;
-      font-size: 28px;
-      cursor: grab;
-      user-select: none;
-      transition: transform 0.2s ease;
-    }
+/* explosion text */
+.explosionTxt{
+  position:absolute; z-index:9; font-size:36px; transform:translate(-50%,-50%); pointer-events:none;
+  text-shadow:0 8px 28px rgba(255,80,140,0.25);
+}
 
-    .node:active {
-      transform: scale(1.2);
-    }
-
-    .toolbar {
-      margin-top: 10px;
-      display: flex;
-      justify-content: space-around;
-      width: 100%;
-    }
-
-    button {
-      background: #ffeaf2;
-      border: 1px solid #ffc9dc;
-      border-radius: 8px;
-      padding: 6px 12px;
-      cursor: pointer;
-      font-family: inherit;
-      font-size: 0.9rem;
-      color: #ff6ca5;
-      transition: all 0.2s;
-    }
-
-    button:hover {
-      background: #ffb6c1;
-      color: white;
-    }
-
-    .title {
-      text-align: center;
-      font-weight: 600;
-      color: #ff6ca5;
-      margin-bottom: 10px;
-    }
-
-    /* dark mode */
-    @media (prefers-color-scheme: dark) {
-      body {
-        background: #1e1e1e;
-        color: #ddd;
-      }
-      .container {
-        background: #2c2c2c;
-        box-shadow: 0 4px 12px rgba(255, 140, 176, 0.2);
-      }
-      .canvas {
-        background: #262626;
-        border: 2px dashed #555;
-      }
-      .palette {
-        background: #333;
-      }
-      button {
-        background: #3a3a3a;
-        border: 1px solid #555;
-        color: #ff9fc7;
-      }
-      button:hover {
-        background: #ff9fc7;
-        color: #2b2b2b;
-      }
-    }
-  </style>
+/* responsive */
+@media (max-width:760px){
+  .game-area{height:420px}
+  .menu{width:92%}
+  .timer{font-size:14px}
+}
+</style>
 </head>
 <body>
-  <div class="container">
-    <div class="palette">
-      <h2>Atoms (emoji)</h2>
-      <div class="atoms">
-        <div class="atom" draggable="true" data-type="🟣">🟣</div>
-        <div class="atom" draggable="true" data-type="🔴">🔴</div>
-        <div class="atom" draggable="true" data-type="⚫">⚫</div>
-        <div class="atom" draggable="true" data-type="🟡">🟡</div>
-        <div class="atom" draggable="true" data-type="🟢">🟢</div>
-        <div class="atom" draggable="true" data-type="🔵">🔵</div>
-      </div>
-      <div class="toolbar">
-        <button id="reset">Reset</button>
-      </div>
-    </div>
+<div class="wrap">
+  <div class="game-area" id="gameArea">
+    <canvas id="bgCanvas"></canvas>
+    <canvas id="gameCanvas"></canvas>
 
-    <div class="canvas" id="canvas">
-      <p style="text-align:center; color:#aaa; margin-top:180px;">Drag atoms here 💫</p>
+    <div class="ui" aria-hidden="false">
+      <div class="top-left">
+        <div class="title">rocket dodge</div>
+      </div>
+
+      <!-- menu -->
+      <div class="menu" id="menu">
+        <h1>Press SPACE to Play</h1>
+        <p class="small">Choose your vehicle and survive as long as you can ✨</p>
+        <div class="choices">
+          <button class="btn" id="chooseRocket">🚀 Rocket</button>
+          <button class="btn" id="chooseUfo">🛸 UFO</button>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:center">
+          <button class="btn primary" id="startBtn">Start</button>
+          <button class="btn" id="howBtn">How to play</button>
+        </div>
+        <p class="small-note" style="margin-top:10px">Use ↑ and ↓ arrows to change lane. Objects come from right → left.</p>
+      </div>
+
+      <!-- HUD left -->
+      <div class="hud-left" id="hudLeft">
+        <b>Lane: 3 / 5</b>
+        <div id="scoreDisplay">Survived: 0.0s</div>
+        <div id="speedInfo" style="opacity:0.8;font-size:12px;margin-top:6px">Speed: normal</div>
+      </div>
+
+      <!-- timer bottom center -->
+      <div class="timerWrap"><div class="timer">⏱️ <strong id="timerVal">0.0</strong> s</div></div>
+
+      <!-- overlay game over -->
+      <div class="overlay" id="overlay">
+        <h2 id="endTitle">You survived</h2>
+        <p id="endText">0.0 seconds</p>
+        <div class="actions">
+          <button class="btn primary" id="retryBtn">Try again</button>
+          <button class="btn" id="menuBtn">Back to menu</button>
+        </div>
+      </div>
+
     </div>
   </div>
+</div>
 
-  <script>
-    const canvas = document.getElementById('canvas');
-    const resetBtn = document.getElementById('reset');
-    let nodes = [];
+<!-- sounds (free sound links from actions.google) -->
+<audio id="snd-tick" src="https://actions.google.com/sounds/v1/impacts/clang_and_wobble.ogg"></audio>
+<audio id="snd-explode" src="https://actions.google.com/sounds/v1/explosions/explosion.ogg"></audio>
+<audio id="snd-move" src="https://actions.google.com/sounds/v1/cartoon/slide_whistle_to_drum_hit.ogg"></audio>
 
-    // allow drop
-    canvas.addEventListener('dragover', (e)=> e.preventDefault());
+<script>
+/*
+  Rocket Dodge — single file
+  - 5 lanes (1..5), player moves up/down with arrow keys
+  - player sprite is emoji chosen (rocket or ufo)
+  - player moves slowly left->right automatically; objects spawn at right and move left
+  - collisions => explosion emoji shown, game stops, overlay shows survival time
+  - stars background, jelly timer, small sounds
+*/
 
-    // drop atom onto canvas
-    canvas.addEventListener('drop', (e)=>{
-      e.preventDefault();
-      const type = e.dataTransfer.getData('text/plain');
-      if(!type) return;
-      const x = e.offsetX;
-      const y = e.offsetY;
-      const node = document.createElement('div');
-      node.classList.add('node');
-      node.textContent = type;
-      node.style.left = `${x - 15}px`;
-      node.style.top = `${y - 15}px`;
-      node.draggable = true;
-      canvas.appendChild(node);
-      nodes.push(node);
+(() => {
+  // basic setup
+  const gameArea = document.getElementById('gameArea');
+  const bgCanvas = document.getElementById('bgCanvas');
+  const gCanvas = document.getElementById('gameCanvas');
+  const overlay = document.getElementById('overlay');
+  const menu = document.getElementById('menu');
+  const timerVal = document.getElementById('timerVal');
+  const hudLeft = document.getElementById('hudLeft');
+  const scoreDisplay = document.getElementById('scoreDisplay');
+  const sndTick = document.getElementById('snd-tick');
+  const sndExplode = document.getElementById('snd-explode');
+  const sndMove = document.getElementById('snd-move');
+
+  let W, H;
+  function resize() {
+    const rect = gameArea.getBoundingClientRect();
+    W = rect.width; H = rect.height;
+    bgCanvas.width = W; bgCanvas.height = H;
+    gCanvas.width = W; gCanvas.height = H;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // starfield background
+  const bgCtx = bgCanvas.getContext('2d');
+  let stars = [];
+  function createStars(count=140){
+    stars = [];
+    for(let i=0;i<count;i++){
+      stars.push({x: Math.random()*W, y: Math.random()*H, r: Math.random()*1.4, alpha: 0.2+Math.random()*0.8});
+    }
+  }
+  createStars();
+
+  function drawBackground(dt){
+    bgCtx.clearRect(0,0,W,H);
+    // radial subtle glow left
+    const g = bgCtx.createRadialGradient(W*0.15,H*0.3,30, W*0.15,H*0.3, W*0.9);
+    g.addColorStop(0,'rgba(255,128,190,0.06)'); g.addColorStop(1,'rgba(0,0,0,0.0)');
+    bgCtx.fillStyle = g; bgCtx.fillRect(0,0,W,H);
+    // stars
+    stars.forEach(s=>{
+      bgCtx.beginPath();
+      bgCtx.fillStyle = 'rgba(255,255,255,'+ (0.05 + 0.6*s.alpha) +')';
+      bgCtx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      bgCtx.fill();
+    });
+    // slowly drift stars left
+    stars.forEach(s=>{ s.x -= 10 * dt; if(s.x < 0) s.x = W; });
+  }
+
+  // game canvas
+  const ctx = gCanvas.getContext('2d');
+
+  // lanes positions (y coordinates)
+  function computeLanes(){
+    const margin=80;
+    const top = margin;
+    const bottom = H - margin;
+    const lanes = [];
+    for(let i=0;i<5;i++){
+      lanes.push(top + (i/(4))*(bottom-top));
+    }
+    return lanes;
+  }
+  let lanes = computeLanes();
+  window.addEventListener('resize', ()=> lanes = computeLanes());
+
+  // player
+  let player = {
+    emoji: '🚀',
+    lane: 2, // 0..4
+    x: 0.12, // relative (0..1) from left
+    w: 48,
+    h: 48,
+    vx: 0.02 // horizontal speed per second relative to width
+  };
+
+  // obstacles pool
+  const obstacleEmojis = ['🥀','💩','🐿️','🦔','🔩','🪵','🪨'];
+  let obstacles = [];
+  function spawnObstacle(speedMultiplier=1){
+    const lane = Math.floor(Math.random()*5);
+    const emoji = obstacleEmojis[Math.floor(Math.random()*obstacleEmojis.length)];
+    const size = 30 + Math.random()*36;
+    obstacles.push({
+      emoji, lane,
+      x: 1.12 + Math.random()*0.2, // start slightly off-screen to the right
+      w: size, h: size,
+      speed: (0.25 + Math.random()*0.25) * speedMultiplier // relative to width per second
+    });
+  }
+
+  // star-burst left (big exploding star behind)
+  const star = {x: W*0.08, y: H*0.45, r: 80, t: 0};
+
+  // game state
+  let lastTime = performance.now();
+  let accSpawn = 0;
+  let spawnInterval = 0.9; // seconds
+  let running = false;
+  let survived = 0; // seconds
+  let speedMultiplier = 1;
+  let explosion = null; // {x,y,t}
+  let requestId = null;
+  let bestTime = 0;
+
+  // menu controls
+  const chooseRocket = document.getElementById('chooseRocket');
+  const chooseUfo = document.getElementById('chooseUfo');
+  const startBtn = document.getElementById('startBtn');
+  const howBtn = document.getElementById('howBtn');
+  const retryBtn = document.getElementById('retryBtn');
+  const menuBtn = document.getElementById('menuBtn');
+
+  chooseRocket.addEventListener('click', ()=> { player.emoji='🚀'; chooseRocket.classList.add('primary'); chooseUfo.classList.remove('primary'); });
+  chooseUfo.addEventListener('click', ()=> { player.emoji='🛸'; chooseUfo.classList.add('primary'); chooseRocket.classList.remove('primary'); });
+  startBtn.addEventListener('click', ()=> startGame());
+  howBtn.addEventListener('click', ()=> alert('Use UP / DOWN arrows to change lane. Survive as long as possible. Good luck!'));
+
+  // overlay buttons
+  retryBtn.addEventListener('click', ()=> { overlay.style.display='none'; startGame(); });
+  menuBtn.addEventListener('click', ()=> { overlay.style.display='none'; showMenu(); });
+
+  function showMenu(){
+    menu.style.display='block';
+    overlay.style.display='none';
+    running=false;
+    cancelAnimationFrame(requestId);
+  }
+  function hideMenu(){ menu.style.display='none'; }
+
+  // keyboard
+  const keys = {};
+  window.addEventListener('keydown', (e)=>{
+    if(e.code === 'ArrowUp' || e.code === 'ArrowDown' || e.code === 'Space') e.preventDefault();
+    if(e.code === 'Space'){
+      if(!running) startGame();
+      return;
+    }
+    if(!running) return;
+    if(e.code === 'ArrowUp' && !keys['ArrowUp']) { keys['ArrowUp']=true; moveUp(); sndMove.play(); }
+    if(e.code === 'ArrowDown' && !keys['ArrowDown']) { keys['ArrowDown']=true; moveDown(); sndMove.play(); }
+  });
+  window.addEventListener('keyup',(e)=>{ keys[e.code]=false; });
+
+  function moveUp(){
+    player.lane = Math.max(0, player.lane-1);
+    hudLeft.querySelector('b').textContent = `Lane: ${player.lane+1} / 5`;
+  }
+  function moveDown(){
+    player.lane = Math.min(4, player.lane+1);
+    hudLeft.querySelector('b').textContent = `Lane: ${player.lane+1} / 5`;
+  }
+
+  // collision simple AABB
+  function checkCollision(px, py, pw, ph, ox, oy, ow, oh){
+    return px < ox+ow && px+pw > ox && py < oy+oh && py+ph > oy;
+  }
+
+  // main game loop
+  function startGame(){
+    // reset
+    obstacles = [];
+    survived = 0;
+    accSpawn = 0;
+    spawnInterval = 0.9;
+    speedMultiplier = 1;
+    explosion = null;
+    running = true;
+    hideMenu();
+    lastTime = performance.now();
+    player.x = 0.12;
+    overlay.style.display='none';
+    requestId = requestAnimationFrame(loop);
+  }
+
+  function endGame(){
+    running = false;
+    // show explosion for 700ms then overlay
+    sndExplode.currentTime=0; sndExplode.play();
+    overlay.style.display='flex';
+    document.getElementById('endTitle').textContent = 'Boom!';
+    document.getElementById('endText').textContent = `You survived ${survived.toFixed(2)} seconds`;
+    bestTime = Math.max(bestTime, survived);
+    document.getElementById('endText').textContent += ` • Best: ${bestTime.toFixed(2)}s`;
+    cancelAnimationFrame(requestId);
+  }
+
+  function loop(now){
+    const dt = Math.min(0.06, (now - lastTime)/1000); // cap dt for stability
+    lastTime = now;
+    // update background stars
+    drawBackground(dt);
+    // update logic
+    if(running){
+      survived += dt;
+      timerVal.textContent = survived.toFixed(2);
+      scoreDisplay.textContent = `Survived: ${survived.toFixed(2)}s`;
+      accSpawn += dt;
+      // gradually increase difficulty
+      if(survived > 10) speedMultiplier = 1.2;
+      if(survived > 20) speedMultiplier = 1.4;
+      if(survived > 35) speedMultiplier = 1.7;
+      if(survived > 60) speedMultiplier = 2.2;
+      // spawn obstacles
+      const interval = Math.max(0.45, spawnInterval - Math.min(0.5,survived/80));
+      if(accSpawn > interval){
+        accSpawn = 0;
+        // spawn multiple on occasion
+        const cnt = Math.random() < 0.08 ? 1 + Math.floor(Math.random()*3) : 1;
+        for(let i=0;i<cnt;i++) spawnObstacle(speedMultiplier);
+      }
+      // player horizontal auto-move: moves left->right then wraps gently
+      player.x += player.vx * dt * (1 + survived/120);
+      if(player.x > 0.82) player.x = 0.12; // teleport back slightly (gives sense of continuous flight)
+    }
+
+    // update obstacles positions
+    obstacles.forEach(o => { o.x -= o.speed * dt; });
+    // remove offscreen left obstacles
+    obstacles = obstacles.filter(o => o.x > -0.2);
+
+    // draw game
+    ctx.clearRect(0,0,W,H);
+
+    // draw star burst (big star behind) with gentle pulse
+    star.t += dt;
+    const burstR = star.r * (1 + 0.06*Math.sin(star.t*3));
+    const grd = ctx.createRadialGradient(star.x, star.y, 2, star.x, star.y, burstR);
+    grd.addColorStop(0,'rgba(255,210,120,0.18)');
+    grd.addColorStop(0.4,'rgba(255,100,170,0.06)');
+    grd.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(star.x,star.y,burstR,0,Math.PI*2); ctx.fill();
+
+    // recompute lanes each frame properly
+    lanes = computeLanes();
+
+    // draw lanes as soft guide
+    ctx.lineWidth = 1;
+    for(let i=0;i<lanes.length;i++){
+      ctx.strokeStyle = 'rgba(255,255,255,0.02)';
+      ctx.beginPath(); ctx.moveTo(0, lanes[i]); ctx.lineTo(W, lanes[i]); ctx.stroke();
+    }
+
+    // draw obstacles
+    obstacles.forEach(o=>{
+      const ox = o.x * W;
+      const oy = lanes[o.lane] - o.h/2;
+      ctx.save();
+      // small bobbing for animation
+      const bob = 6 * Math.sin((survived+o.x)*5);
+      ctx.font = `${o.w}px serif`;
+      ctx.globalAlpha = 1;
+      ctx.fillText(o.emoji, ox, oy + o.h/2 + bob);
+      ctx.restore();
     });
 
-    // move existing nodes
-    canvas.addEventListener('dragstart', (e)=>{
-      if(!e.target.classList.contains('node')) return;
-      e.dataTransfer.setData('text/plain', JSON.stringify({
-        move: true,
-        id: nodes.indexOf(e.target)
-      }));
-    });
+    // draw player
+    const px = player.x * W;
+    const py = lanes[player.lane];
+    // jelly bounce effect
+    const bounce = 4 * Math.sin((survived*6) + player.lane);
+    ctx.font = `${player.h}px serif`;
+    ctx.save();
+    ctx.translate(px, py + bounce);
+    ctx.fillText(player.emoji, 0, 0);
+    ctx.restore();
 
-    canvas.addEventListener('drop', (e)=>{
-      const data = e.dataTransfer.getData('text/plain');
-      try {
-        const parsed = JSON.parse(data);
-        if(parsed.move){
-          const node = nodes[parsed.id];
-          node.style.left = `${e.offsetX - 15}px`;
-          node.style.top = `${e.offsetY - 15}px`;
-          return;
+    // collision check
+    if(running){
+      const pw = player.w, ph = player.h;
+      const playerX = px - pw/2, playerY = py - ph/2;
+      for(const o of obstacles){
+        const ox = o.x * W - o.w/2;
+        const oy = lanes[o.lane] - o.h/2;
+        if(checkCollision(playerX, playerY, pw, ph, ox, oy, o.w, o.h)){
+          // explosion at collision point
+          explosion = {x: ox + o.w/2, y: oy + o.h/2, t: 0};
+          // draw explosion emoji immediately
+          ctx.font = `48px serif`;
+          ctx.fillText('💥', explosion.x, explosion.y);
+          // stop running
+          running = false;
+          // show overlay after small delay
+          setTimeout(()=> endGame(), 300);
+          break;
         }
-      } catch {}
-    });
+      }
+    }
 
-    // reset button
-    resetBtn.addEventListener('click', ()=>{
-      canvas.innerHTML = '<p style="text-align:center; color:#aaa; margin-top:180px;">Drag atoms here 💫</p>';
-      nodes = [];
-    });
-  </script>
+    // draw explosion animation if present
+    if(explosion){
+      explosion.t += dt;
+      const s = 1 + explosion.t*6;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, 1 - explosion.t*1.8);
+      ctx.font = `${Math.floor(48*s)}px serif`;
+      ctx.fillText('💥', explosion.x, explosion.y);
+      ctx.restore();
+      if(explosion.t > 0.8) explosion = null;
+    }
+
+    // loop
+    requestId = requestAnimationFrame(loop);
+  }
+
+  // click to start via space handling earlier
+  // initial show
+  showMenu();
+
+  // helper to spawn multiple quickly for visual
+  // polyfill text baseline for emoji fillText: set baseline
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+
+  // small tweak: ensure emoji fonts render properly: set fallback
+  // spawn a few demo obstacles
+  for(let i=0;i<3;i++){
+    obstacles.push({emoji: obstacleEmojis[i%obstacleEmojis.length], lane: i%5, x: 1.2 + i*0.2, w: 42 + i*6, h: 42 + i*6, speed: 0.18});
+  }
+
+  // basic autoplay start for testing: none
+
+  // prevent arrow key scroll
+  window.addEventListener('keydown', function(e){
+    if(['ArrowUp','ArrowDown','Space'].includes(e.code)) e.preventDefault();
+  });
+
+})();
+</script>
 </body>
 </html>
+
